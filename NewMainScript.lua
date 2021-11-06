@@ -1,5 +1,5 @@
 repeat wait() until game:IsLoaded() == true
-
+shared.VapeDeveloper = true
 local function GetURL(scripturl)
 	if shared.VapeDeveloper then
 		return readfile("vape/"..scripturl)
@@ -16,6 +16,9 @@ local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or flux
 local requestfunc = syn and syn.request or http and http.request or http_request or fluxus and fluxus.request or getgenv().request or request
 
 local function checkpublicrepo(id)
+if shared.VapeDeveloper then 
+	return nil
+end
 	local req = requestfunc({
 		Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/CustomModules/"..id..".vape",
 		Method = "GET"
@@ -23,10 +26,12 @@ local function checkpublicrepo(id)
 	if req.StatusCode == 200 then
 		return req.Body
 	end
+
 	return nil
 end
 
 local function checkassetversion()
+	
 	local req = requestfunc({
 		Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/assetsversion.dat",
 		Method = "GET"
@@ -44,8 +49,9 @@ if not (getasset and requestfunc and queueteleport) then
 end
 
 if shared.VapeExecuted then
-	error("Vape Already Injected")
-	return
+	print("GUI Library Self destructing..")
+	GuiLibrary["SelfDestruct"]()
+
 else
 	shared.VapeExecuted = true
 end
@@ -76,6 +82,7 @@ end
 if isfolder("vape/assets") == false then
 	makefolder("vape/assets")
 end
+-- VAPE PRIVATE LOADING -- 
 
 local GuiLibrary = loadstring(GetURL("NewGuiLibrary.lua"))()
 
@@ -105,9 +112,11 @@ local function getcustomassetfunc(path)
 end
 
 shared.GuiLibrary = GuiLibrary
+
 local workspace = game:GetService("Workspace")
 local cam = workspace.CurrentCamera
 local selfdestruct = false
+
 local GUI = GuiLibrary.CreateMainWindow()
 local Combat = GuiLibrary.CreateWindow({
 	["Name"] = "Combat", 
@@ -662,7 +671,22 @@ onetext3.Parent = onetext
 local onetext4 = onetext3.ExtraText
 onetext4.TextColor3 = Color3.new(0, 0, 0)
 onetext4.TextTransparency = 0.5
+local onebackground = Instance.new("Frame")
+onebackground.BackgroundTransparency = 0.5
+onebackground.BorderSizePixel = 0
+onebackground.BackgroundColor3 = Color3.new(0, 0, 0)
+onebackground.Visible = false 
+onebackground.Parent = TextGui.GetCustomChildren()
+onebackground.ZIndex = 0
 onetext3:GetPropertyChangedSignal("Text"):connect(function() onetext4.Text = onetext3.Text end)
+onetext:GetPropertyChangedSignal("Size"):connect(function()
+	onebackground.Position = onething.Position - UDim2.new(0, (onetext.Position.X.Offset == -154 and 10 or 0), 0, 0)
+	onebackground.Size = UDim2.new(0, onetext.Size.X.Offset, 0, onetext.Size.Y.Offset + (onething.Visible and 27 or 0))
+end)
+onetext:GetPropertyChangedSignal("Position"):connect(function()
+	onebackground.Position = onething.Position - UDim2.new(0, (onetext.Position.X.Offset == -154 and 10 or 0), 0, 0)
+	onebackground.Size = UDim2.new(0, onetext.Size.X.Offset, 0, onetext.Size.Y.Offset + (onething.Visible and 27 or 0))
+end)
 TextGui.GetCustomChildren().Parent:GetPropertyChangedSignal("Position"):connect(function()
 	if (TextGui.GetCustomChildren().Parent.Position.X.Offset + TextGui.GetCustomChildren().Parent.Size.X.Offset / 2) >= (cam.ViewportSize.X / 2) then
 		onetext.TextXAlignment = Enum.TextXAlignment.Right
@@ -724,6 +748,9 @@ local function UpdateHud()
 	onetext2.Text = text
 	onetext3.Text = text2
 	local newsize = game:GetService("TextService"):GetTextSize(text, onetext.TextSize, onetext.Font, Vector2.new(1000000, 1000000))
+	if text == "" then
+		newsize = Vector2.new(0, 0)
+	end
 	onetext.Size = UDim2.new(0, 154, 0, newsize.Y)
 	onetext3.Size = UDim2.new(0, 154, 0, newsize.Y)
 	if TextGui.GetCustomChildren().Parent then
@@ -745,6 +772,7 @@ local function UpdateHud()
 			onetext.Position = UDim2.new(0, 6, 0, (onething.Visible and 35 or 5))
 		end
 	end
+	GuiLibrary["UpdateUI"]()
 end
 
 GuiLibrary["UpdateHudEvent"].Event:connect(UpdateHud)
@@ -758,11 +786,12 @@ TextGui.CreateDropdown({
 })
 TextGui.CreateToggle({
 	["Name"] = "Shadow", 
-	["Function"] = function(callback) onetext2.Visible = callback onetext4.Visible = callback onething3.Visible = callback end
+	["Function"] = function(callback) onetext2.Visible = callback onetext4.Visible = callback onething3.Visible = callback end,
+	["HoverText"] = "Renders shadowed text."
 })
 local TextGuiUseCategoryColor = TextGui.CreateToggle({
 	["Name"] = "Use Category Color", 
-	["Function"] = function(callback) end
+	["Function"] = function(callback) GuiLibrary["UpdateUI"]() end
 })
 TextGui.CreateToggle({
 	["Name"] = "Watermark", 
@@ -806,23 +835,55 @@ TextGui.CreateToggle({
 				onetext.Position = UDim2.new(0, 6, 0, (onething.Visible and 35 or 5))
 			end
 		end
-	end
+	end,
+	["HoverText"] = "Renders a vape watermark"
 })
 TextGui.CreateToggle({
 	["Name"] = "Render background", 
-	["Function"] = function(callback) 
-		if callback then
-			onething.BackgroundTransparency = 0.5 
-			onething2.BackgroundTransparency = 0.5 
-			onetext.BackgroundTransparency = 0.5 
-		else
-			onething.BackgroundTransparency = 1
-			onething2.BackgroundTransparency = 1
-			onetext.BackgroundTransparency = 1
-		end
+	["Function"] = function(callback)
+		onebackground.Visible = callback
 	end
 })
+local healthColorToPosition = {
+	[Vector3.new(Color3.fromRGB(255, 28, 0).r,
+  Color3.fromRGB(255, 28, 0).g,
+  Color3.fromRGB(255, 28, 0).b)] = 0.1;
+	[Vector3.new(Color3.fromRGB(250, 235, 0).r,
+  Color3.fromRGB(250, 235, 0).g,
+  Color3.fromRGB(250, 235, 0).b)] = 0.5;
+	[Vector3.new(Color3.fromRGB(27, 252, 107).r,
+  Color3.fromRGB(27, 252, 107).g,
+  Color3.fromRGB(27, 252, 107).b)] = 0.8;
+}
+local min = 0.1
+local minColor = Color3.fromRGB(255, 28, 0)
+local max = 0.8
+local maxColor = Color3.fromRGB(27, 252, 107)
 
+local function HealthbarColorTransferFunction(healthPercent)
+	if healthPercent < min then
+		return minColor
+	elseif healthPercent > max then
+		return maxColor
+	end
+
+
+	local numeratorSum = Vector3.new(0,0,0)
+	local denominatorSum = 0
+	for colorSampleValue, samplePoint in pairs(healthColorToPosition) do
+		local distance = healthPercent - samplePoint
+		if distance == 0 then
+
+			return Color3.new(colorSampleValue.x, colorSampleValue.y, colorSampleValue.z)
+		else
+			local wi = 1 / (distance*distance)
+			numeratorSum = numeratorSum + wi * colorSampleValue
+			denominatorSum = denominatorSum + wi
+		end
+	end
+	local result = numeratorSum / denominatorSum
+	return Color3.new(result.x, result.y, result.z)
+end
 local TargetInfo = GuiLibrary.CreateCustomWindow({
 	["Name"] = "Target Info",
 	["Icon"] = "vape/assets/TargetInfoIcon1.png",
@@ -848,7 +909,7 @@ targetinfobkg3.Parent = targetinfobkg1
 local targetname = Instance.new("TextLabel")
 targetname.TextSize = 17
 targetname.Font = Enum.Font.SourceSans
-targetname.TextColor3 = Color3.new(1, 1, 1)
+targetname.TextColor3 = Color3.fromRGB(162, 162, 162)
 targetname.Position = UDim2.new(0, 72, 0, 7)
 targetname.TextStrokeTransparency = 0.75
 targetname.BackgroundTransparency = 1
@@ -882,11 +943,6 @@ targethealthgreen.BackgroundColor3 = Color3.fromRGB(40, 137, 109)
 targethealthgreen.Size = UDim2.new(1, 0, 0, 4)
 targethealthgreen.ZIndex = 3
 targethealthgreen.Parent = targethealthbkg
-local targethealthorange = Instance.new("Frame")
-targethealthorange.ZIndex = 2
-targethealthorange.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-targethealthorange.Size = UDim2.new(1, 0, 0, 4)
-targethealthorange.Parent = targethealthbkg
 local targetimage = Instance.new("ImageLabel")
 targetimage.Size = UDim2.new(0, 61, 0, 61)
 targetimage.BackgroundTransparency = 1
@@ -900,14 +956,11 @@ local round2 = Instance.new("UICorner")
 round2.CornerRadius = UDim.new(0, 4)
 round2.Parent = targetinfobkg3
 local round3 = Instance.new("UICorner")
-round3.CornerRadius = UDim.new(0, 4)
+round3.CornerRadius = UDim.new(0, 5)
 round3.Parent = targethealthbkg
 local round4 = Instance.new("UICorner")
-round4.CornerRadius = UDim.new(0, 4)
+round4.CornerRadius = UDim.new(0, 8)
 round4.Parent = targethealthgreen
-local round6 = Instance.new("UICorner")
-round6.CornerRadius = UDim.new(0, 4)
-round6.Parent = targethealthorange
 local round5 = Instance.new("UICorner")
 round5.CornerRadius = UDim.new(0, 4)
 round5.Parent = targetimage
@@ -930,21 +983,8 @@ shared.VapeTargetInfo = {
 		for i,v in pairs(tab) do
 			targetimage.Image = 'rbxthumb://type=AvatarHeadShot&id='..v["UserId"]..'&w=420&h=420'
 			targethealthgreen:TweenSize(UDim2.new(v["Health"] / v["MaxHealth"], 0, 0, 4), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.05, true)
-			spawn(function()
-				if allowedtween then
-					if v["Health"] < oldhealth then
-						targethealthorange:TweenSize(UDim2.new(oldhealth / v["MaxHealth"], 0, 0, 4), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.05, true)
-						oldhealth = v["Health"]
-						allowedtween = false
-						wait(0.3)
-						allowedtween = true
-						targethealthorange:TweenSize(UDim2.new(v["Health"] / v["MaxHealth"], 0, 0, 4), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.05, true)
-					else
-						targethealthorange:TweenSize(UDim2.new(v["Health"] / v["MaxHealth"], 0, 0, 4), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.05, true)
-					end
-				end
-			end)
-			targethealth.Text = math.floor(v["Health"]).." hp"
+			targethealth.Text = (math.floor((v["Health"] / 5) * 10) / 10).." hp"
+			targethealthgreen.BackgroundColor3 = HealthbarColorTransferFunction(v["Health"] / v["MaxHealth"])
 			targetname.Text = i
 		end
 	end,
@@ -957,31 +997,20 @@ GUI.CreateCustomToggle({
 	["Priority"] = 1
 })
 
-GUI.CreateDivider2("MODULE SETTINGS")
-GUI.CreateToggle({
-	["Name"] = "Players", 
-	["Function"] = function() end,
-	["Default"] = true
-})
-GUI.CreateToggle({
-	["Name"] = "NPCs", 
-	["Function"] = function() end,
-})
-GUI.CreateToggle({
-	["Name"] = "Ignore naked", 
-	["Function"] = function() end,
-})
-GUI.CreateToggle({
+local GeneralSettings = GUI.CreateDivider2("General Settings")
+local ModuleSettings = GUI.CreateDivider2("Module Settings")
+local GUISettings = GUI.CreateDivider2("GUI Settings")
+ModuleSettings.CreateToggle({
 	["Name"] = "Teams by server", 
 	["Function"] = function() end,
 })
-GUI.CreateToggle({
+ModuleSettings.CreateToggle({
 	["Name"] = "Teams by color", 
 	["Function"] = function() end,
 	["Default"] = true
 })
 local MiddleClickInput
-GUI.CreateToggle({
+ModuleSettings.CreateToggle({
 	["Name"] = "MiddleClick friends", 
 	["Function"] = function(callback) 
 		if callback then
@@ -1006,11 +1035,18 @@ GUI.CreateToggle({
 		end
 	end
 })
+ModuleSettings.CreateToggle({
+	["Name"] = "Lobby Check",
+	["Function"] = function() end,
+	["Default"] = true,
+	["HoverText"] = "Temporarily disables certain features in server lobbies."
+})
 local blatantmode = GUI.CreateToggle({
 	["Name"] = "Blatant mode",
-	["Function"] = function() end
+	["Function"] = function() end,
+	["HoverText"] = "Required for certain features."
 })
-GUI.CreateDivider2("GENERAL SETTINGS")
+--GUI.CreateDivider2("GENERAL SETTINGS")
 guicolorslider = GUI.CreateColorSlider("GUI Theme", function(val) GuiLibrary["Settings"]["GUIObject"]["Color"] = val GuiLibrary["UpdateUI"]() end)
 local tabsortorder = {
 	["CombatButton"] = 1,
@@ -1025,26 +1061,23 @@ local tabsortorder = {
 local tabcategorycolor = {
 	["CombatWindow"] = Color3.fromRGB(214, 27, 6),
 	["BlatantWindow"] = Color3.fromRGB(219, 21, 133),
-	["RenderWindow"] = Color3.fromRGB(135, 14, 165),
-	["UtilityWindow"] = Color3.fromRGB(27, 145, 68),
-	["WorldWindow"] = Color3.fromRGB(70, 73, 16)
+	["RenderWindow"] = Color3.fromRGB(0, 255, 0),
+	["UtilityWindow"] = Color3.fromRGB(0, 193, 22),
+	["WorldWindow"] = Color3.fromRGB(231, 6, 112)
 }
 
 GuiLibrary["UpdateUI"] = function()
 	pcall(function()
-		GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Object"].Children.Extras.MainButton.ImageColor3 = (GUI["GetVisibleIcons"]() > 0 and Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9) or Color3.fromRGB(199, 199, 199))
+	
 		GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Object"].Logo1.Logo2.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 		onething.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 		onetext.TextColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 		local newtext = ""
 		local newfirst = false
 		for i2,v2 in pairs(textwithoutthing:split("\n")) do
-			local rainbowsub = 2
-			local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.015 * i2) or 0)
-			if rainbowcolor < 0 then rainbowsub = 3 rainbowcolor = rainbowcolor * 0.25 end
-			local str = tostring(rainbowcolor)
-			local newcol = tonumber("0"..string.sub(str, rainbowsub, string.len(str)))
-			local newcolor = Color3.fromHSV(newcol, 0.7, 0.9)
+			local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * i2) or 0)
+			if rainbowcolor < 0 then rainbowcolor = 1 + rainbowcolor end
+			local newcolor = Color3.fromHSV(rainbowcolor, 0.7, 0.9)
 			if TextGuiUseCategoryColor["Enabled"] and GuiLibrary["ObjectsThatCanBeSaved"][v2:gsub(" ", "").."OptionsButton"] and tabcategorycolor[GuiLibrary["ObjectsThatCanBeSaved"][v2:gsub(" ", "").."OptionsButton"]["Object"].Parent.Parent.Name.."Window"] then
 				newcolor = tabcategorycolor[GuiLibrary["ObjectsThatCanBeSaved"][v2:gsub(" ", "").."OptionsButton"]["Object"].Parent.Parent.Name.."Window"]
 			end
@@ -1052,14 +1085,18 @@ GuiLibrary["UpdateUI"] = function()
 			newfirst = true
 		end
 		onetext.Text = newtext
+		local buttons = 0
 		for i,v in pairs(GuiLibrary["ObjectsThatCanBeSaved"]) do
+			if v["Type"] == "TargetFrame" then
+				if v["Object"].TargetWindow.Visible then
+					v["Object"].TextButton.Frame.BackgroundColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
+				end
+			end
 			if (v["Type"] == "Button" or v["Type"] == "ButtonMain") and v["Api"]["Enabled"] then
-				local rainbowsub = 2
-				local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.03 * tabsortorder[i]) or 0)
-				if rainbowcolor < 0 then rainbowsub = 3 rainbowcolor = rainbowcolor * 0.25 end
-				local str = tostring(rainbowcolor)
-				local newcol = tonumber("0"..string.sub(str, rainbowsub, string.len(str)))
-				local newcolor = Color3.fromHSV(newcol, 0.7, 0.9)
+				buttons = buttons + 1
+				local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * tabsortorder[i]) or 0)
+				if rainbowcolor < 0 then rainbowcolor = 1 + rainbowcolor end
+				local newcolor = Color3.fromHSV(rainbowcolor, 0.7, 0.9)	
 				v["Object"].ButtonText.TextColor3 = newcolor
 				if v["Object"]:FindFirstChild("ButtonIcon") then
 					v["Object"].ButtonIcon.ImageColor3 = newcolor
@@ -1072,12 +1109,10 @@ GuiLibrary["UpdateUI"] = function()
 			end
 			if v["Type"] == "ExtrasButton" then
 				if v["Api"]["Enabled"] then
-					local rainbowsub = 2
-					local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.03 * 8) or 0)
-					if rainbowcolor < 0 then rainbowsub = 3 rainbowcolor = rainbowcolor * 0.25 end
-					local str = tostring(rainbowcolor)
-					local newcol = tonumber("0"..string.sub(str, rainbowsub, string.len(str)))
-					local newcolor = Color3.fromHSV(newcol, 0.7, 0.9)
+					print(buttons)
+					local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * buttons) or 0)
+					if rainbowcolor < 0 then rainbowcolor = 1 + rainbowcolor end
+					local newcolor = Color3.fromHSV(rainbowcolor, 0.7, 0.9)
 					v["Object"].ImageColor3 = newcolor
 				end
 			end
@@ -1094,6 +1129,9 @@ GuiLibrary["UpdateUI"] = function()
 				v["Object"].Slider.ButtonSlider2.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 			end
 		end
+		local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * buttons) or 0)
+		if rainbowcolor < 0 then rainbowcolor = 1 + rainbowcolor end
+		GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Object"].Children.Extras.MainButton.ImageColor3 = (GUI["GetVisibleIcons"]() > 0 and Color3.fromHSV(rainbowcolor, 0.7, 0.9) or Color3.fromRGB(199, 199, 199))
 		ProfilesTextList["Object"].AddBoxBKG.AddButton.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 		for i3, v3 in pairs(ProfilesTextList["ScrollingObject"].ScrollingFrame:GetChildren()) do
 		--	pcall(function()
@@ -1108,16 +1146,16 @@ GuiLibrary["UpdateUI"] = function()
 	end)
 end
 
-GUI.CreateToggle({
+GeneralSettings.CreateToggle({
 	["Name"] = "Auto-load module states", 
 	["Function"] = function() end
 })
-GUI.CreateToggle({
+GUISettings.CreateToggle({
 	["Name"] = "Blur Background", 
 	["Function"] = function(callback) GuiLibrary["MainBlur"].Size = (callback and 25 or 0) end,
 	["Default"] = true
 })
-local rescale = GUI.CreateToggle({
+local rescale = GUISettings.CreateToggle({
 	["Name"] = "Rescale", 
 	["Function"] = function(callback) 
 		GuiLibrary["MainRescale"].Scale = (callback and math.clamp(cam.ViewportSize.X / 1920, 0.5, 1) or 0.99)
@@ -1131,53 +1169,51 @@ cam:GetPropertyChangedSignal("ViewportSize"):connect(function()
 		GuiLibrary["MainRescale"].Scale = math.clamp(cam.ViewportSize.X / 1920, 0.5, 1)
 	end
 end)
-GUI.CreateToggle({
+GeneralSettings.CreateToggle({
 	["Name"] = "Enable Multi-Keybinding", 
 	["Function"] = function() end
 })
-local welcomemsg = GUI.CreateToggle({
+local welcomemsg = GUISettings.CreateToggle({
 	["Name"] = "GUI bind indicator", 
 	["Function"] = function() end, 
 	["Default"] = true
 })
-GUI.CreateToggle({
+GUISettings.CreateToggle({
 	["Name"] = "Show Tooltips", 
 	["Function"] = function(callback) GuiLibrary["ToggleTooltips"] = callback end,
 	["Default"] = true
 })
-GUI.CreateToggle({
+GeneralSettings.CreateToggle({
 	["Name"] = "Discord integration", 
 	["Function"] = function() end
 })
 local ToggleNotifications = {["Object"] = nil}
 local Notifications = {}
-Notifications = GUI.CreateToggle({
+Notifications = GeneralSettings.CreateToggle({
 	["Name"] = "Notifications", 
 	["Function"] = function(callback) 
 		GuiLibrary["Notifications"] = callback 
-		if ToggleNotifications["Object"] then
-			ToggleNotifications["Object"].Visible = callback
-			Notifications["Object"].ToggleArrow.Visible = callback
-		end
+		
 	end,
 	["Default"] = true
 })
-ToggleNotifications = GUI.CreateToggle({
-	["Name"] = "Toggle Notifications", 
+ToggleNotifications = GUISettings.CreateToggle({
+	["Name"] = "Toggle Alert", 
 	["Function"] = function(callback) GuiLibrary["ToggleNotifications"] = callback end,
 	["Default"] = true
 })
 ToggleNotifications["Object"].BackgroundTransparency = 0
 ToggleNotifications["Object"].BorderSizePixel = 0
 ToggleNotifications["Object"].BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleNotifications["Object"].Visible = Notifications["Enabled"]
+--ToggleNotifications["Object"].Visible = Notifications["Enabled"]
 
 local GUIbind = GUI.CreateGUIBind()
 
 local teleportfunc = game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
     if State == Enum.TeleportState.Started then
 		GuiLibrary["SaveSettings"]()
-        queueteleport('shared.VapeSwitchServers = true wait(1) if shared.VapeDeveloper then loadstring(readfile("vape/NewMainScript.lua"))() else loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))() end')
+		
+        queueteleport('shared.VapeSwitchServers = true shared.VapeDeveloper = true wait(1) if shared.VapeDeveloper then loadstring(readfile("vape/NewMainScript.lua"))() else loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))() end')
     end
 end)
 
@@ -1203,7 +1239,7 @@ GuiLibrary["SelfDestruct"] = function()
 	GuiLibrary["MainBlur"]:Remove()
 end
 
-GUI.CreateButton2({
+ModuleSettings.CreateButton2({
 	["Name"] = "RESET CURRENT PROFILE", 
 	["Function"] = function()
 		GuiLibrary["SelfDestruct"]()
@@ -1213,7 +1249,7 @@ GUI.CreateButton2({
 		loadstring(GetURL("NewMainScript.lua"))()
 	end
 })
-GUI.CreateButton2({
+GUISettings.CreateButton2({
 	["Name"] = "RESET GUI POSITIONS", 
 	["Function"] = function()
 		for i,v in pairs(GuiLibrary["ObjectsThatCanBeSaved"]) do
@@ -1223,7 +1259,7 @@ GUI.CreateButton2({
 		end
 	end
 })
-GUI.CreateButton2({
+GUISettings.CreateButton2({
 	["Name"] = "SORT GUI", 
 	["Function"] = function()
 		local sorttable = {}
@@ -1265,21 +1301,50 @@ GUI.CreateButton2({
 		end
 	end
 })
-GUI.CreateButton2({
+GeneralSettings.CreateButton2({
 	["Name"] = "UNINJECT",
 	["Function"] = GuiLibrary["SelfDestruct"]
 })
-
-loadstring(GetURL("AnyGame.vape"))()
+GeneralSettings.CreateButton2({
+	["Name"] = "REINJECT",
+	["Function"] = function()
+		GuiLibrary["SelfDestruct"]()
+		shared.VapeSwitchServers = true
+		shared.VapeOpenGui = true
+		loadstring(GetURL("NewMainScript.lua"))()
+	end,
+})
+-- ANY GAME --
+pcall(function() loadstring(GetURL("AnyGame.vape"))() end)
+-- VAPE PUBLIC -- 
 if pcall(function() readfile("vape/CustomModules/"..game.PlaceId..".vape") end) then
-	loadstring(readfile("vape/CustomModules/"..game.PlaceId..".vape"))()
-else
-	local publicrepo = checkpublicrepo(game.PlaceId)
-	if publicrepo then
-		loadstring(publicrepo)()
+	local suc, errormsg = pcall(function()
+		loadstring(readfile("vape/CustomModules/"..game.PlaceId..".vape"))()
+		
+	end)
+	if errormsg then 
+		warn("Vape loading error: "..errormsg)
 	end
 end
+-- VAPE PRIVATE -- 
+if pcall(function() readfile("vapeprivate/CustomModules/"..game.PlaceId..".vape") end) then
+	pcall(function()
+		loadstring(readfile("vapeprivate/CustomModules/"..game.PlaceId..".vape"))()
+	end)
+end
+-- ENGO VAPE
+if pcall(function() readfile("engovape/CustomModules/"..game.PlaceId..".vape") end) then
+	pcall(function() 
+		loadstring(readfile("engovape/CustomModules/"..game.PlaceId..".vape"))() 
+	end)
+end
+-- ENGO VAPE PRIVATE
 
+if pcall(function() readfile("engovapeprivate/CustomModules/"..game.PlaceId..".vape") end) then
+	pcall(function() 
+		loadstring(readfile("engovapeprivate/CustomModules/"..game.PlaceId..".vape"))() 
+	end)
+end
 GuiLibrary["LoadSettings"]()
 if #ProfilesTextList["ObjectList"] == 0 then
 	table.insert(ProfilesTextList["ObjectList"], "default")
@@ -1287,19 +1352,21 @@ if #ProfilesTextList["ObjectList"] == 0 then
 end
 GUIbind["Reload"]()
 GuiLibrary["UpdateUI"]()
-if blatantmode["Enabled"] then
-	pcall(function()
-		local frame = GuiLibrary["CreateNotification"]("Blatant Enabled", "Vape is now in Blatant Mode.", 4, "vape/assets/WarningNotification.png")
-		frame.Frame.BackgroundColor3 = Color3.fromRGB(236, 129, 44)
-		frame.Frame.Frame.BackgroundColor3 = Color3.fromRGB(236, 129, 44)
-	end)
-end
+
 if not shared.VapeSwitchServers then
+	if blatantmode["Enabled"] then
+		pcall(function()
+			local frame = GuiLibrary["CreateNotification"]("Blatant Enabled", "Vape is now in Blatant Mode.", 4, "vape/assets/WarningNotification.png")
+			frame.Frame.BackgroundColor3 = Color3.fromRGB(236, 129, 44)
+			frame.Frame.Frame.BackgroundColor3 = Color3.fromRGB(236, 129, 44)
+		end)
+	end
 	GuiLibrary["LoadedAnimation"](welcomemsg["Enabled"])
 else
 	shared.VapeSwitchServers = nil
 end
 if shared.VapeOpenGui then
+
 	GuiLibrary["MainGui"].ClickGui.Visible = true
 	GuiLibrary["MainBlur"].Enabled = true	
 	shared.VapeOpenGui = nil

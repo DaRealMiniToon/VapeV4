@@ -1,4 +1,5 @@
 -- Credits to Inf Yield & all the other scripts that helped me make bypasses
+shared.VapeDeveloper = true
 local GuiLibrary = shared.GuiLibrary
 local players = game:GetService("Players")
 local textservice = game:GetService("TextService")
@@ -411,7 +412,38 @@ autoclickercps = autoclicker.CreateTwoSlider({
 	["Default"] = 8,
 	["Default2"] = 12
 })
-
+--[[coroutine.resume(coroutine.create(function()
+local GC = getconnections or get_signal_cons
+for i,v in pairs(GC(Players.LocalPlayer.Idled)) do
+	if v["Disable"] then
+		v["Disable"](v)
+	elseif v["Disconnect"] then
+		v["Disconnect"](v)
+	end
+end
+end))--]]
+runcode(function()
+	local DarkMode = {["Enabled"] = false}
+	local originalTime = "13:00:00"
+	local newTime = "6:00:00"
+	local oldbrightness = 3
+	DarkMode = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].CreateOptionsButton({
+		["Name"] = "Dark Mode (visual)",
+		["Function"] = function(callback)
+			if callback then
+				lighting.Brightness = 0
+				lighting.TimeOfDay = newTime
+				lighting.GlobalShadows = true
+			else
+				lighting.Brightness = 3
+				lighting.TimeOfDay = originalTime
+				
+			end
+		end,
+		["HoverText"] = "dark mode."
+	})
+	
+end)
 local reachrange = {["Value"] = 1}
 local oldsize = {}
 local Reach = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateOptionsButton({
@@ -718,6 +750,23 @@ longjumpboost = longjump.CreateSlider({
 	["Max"] = 150, 
 	["Function"] = function(val) end
 })
+
+runcode(function()
+	local simplespy = GuiLibrary["ObjectsThatCanBeSaved"]["UtilityWindow"]["Api"].CreateOptionsButton({
+	["Name"] = "simplespy", 
+	["Function"] = function(callback)
+		if callback then
+		
+		   loadstring(game:HttpGet('https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/master/SimpleSpy.lua'))()
+		
+		else 
+			game.CoreGui.SimpleSpy2:Destroy()
+		end
+	end,
+	["HoverText"] = "Loads simplespy."
+})
+end)
+
 
 local HighJumpMethod = {["Value"] = "Toggle"}
 local HighJumpBoost = {["Value"] = 1}
@@ -1711,7 +1760,8 @@ local Xray = GuiLibrary["ObjectsThatCanBeSaved"]["WorldWindow"]["Api"].CreateOpt
 			end
 			XrayAdd:Disconnect()
 		end
-	end
+	end,
+	["HoverText"] = "Lets you see through some walls (MAY HAVE LAGSPIKE)"
 })
 
 local TracersFolder = Instance.new("Folder")
@@ -2028,7 +2078,8 @@ local Freecam = GuiLibrary["ObjectsThatCanBeSaved"]["WorldWindow"]["Api"].Create
 			UnbindFromRenderStep("Freecam")
 			PlayerState.Pop()
 		end
-	end
+	end,
+	["HoverText"] = "Puts you in vape freecam. (Not roblox freecam.)"
 })
 freecamspeed = Freecam.CreateSlider({
 	["Name"] = "Speed",
@@ -2050,5 +2101,6 @@ local Panic = GuiLibrary["ObjectsThatCanBeSaved"]["UtilityWindow"]["Api"].Create
 				end
 			end
 		end
-	end
+	end,
+	["HoverText"] = "Disables all Vape functions (useful if an admin joins)"
 }) 
