@@ -73,12 +73,22 @@ local function createwarning(title, text, delay)
 	end)
 end
 
-for i4,v4 in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
+--[[for i4,v4 in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
 	if (v4.Name:find("Analytics") or v4.Name:find("Report")) and (v4:IsA("RemoteFunction") or v4:IsA("RemoteEvent")) then
 		v4:Remove()
 	end
-end
-
+end--]]
+coroutine.resume(coroutine.create(function()
+	task.wait(8)
+	for _,v in pairs(getconnections(game:GetService("ScriptContext").Error)) do
+		print("found ScriptContext error detection, removing")
+		v:Disable()
+	 end
+	for _,v in pairs(getconnections(game:GetService("LogService").MessageOut)) do
+		print("found LogService output detection, removing")
+		v:Disable()
+	end
+	end))
 getfunctions = function()
 	for i,v in pairs(getgc(true)) do
 		if type(v) == "table" then
@@ -202,6 +212,29 @@ Sprint = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateOption
 	["HoverText"] = "Sets your sprinting to true"
 })
 
+	InviteAll = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOptionsButton({
+	["Name"] = "InviteAll",
+	["Function"] = function(callback)
+		if callback then
+			
+			InviteAll["ToggleButton"](false)
+			for _,v in next, game.Players:GetPlayers() do
+			
+
+			local args = {
+    			[1] = {
+        			["player"] = v
+    			}
+			}
+
+			game:GetService("ReplicatedStorage").rbxts_include.node_modules.net.out._NetManaged.InviteToParty:InvokeServer(unpack(args))
+
+			end
+		end
+	end, 
+	["HoverText"] = "Invites everyone in the server to your party (!!! May be patched.)"
+})
+
 local QueueTypes = {}
 for i,v in pairs(workspace.Lobby.Queues:GetChildren()) do table.insert(QueueTypes, v.Name) end
 local JoinQueue = {["Enabled"] = false}
@@ -214,18 +247,25 @@ JoinQueue = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOp
 			spawn(function()
 				repeat
 					wait(JoinQueueDelay["Value"])
-					if bedwars["ClientStore"]:getState().Party.leader.userId == lplr.UserId and bedwars["Client"]:Get("JoinQueue"):CallServer({
-						queueType = JoinQueueTypes["Value"]
-					}) then
-						if JoinQueue["Enabled"] == false then
-							bedwars["Client"]:Get("LeaveQueue"):CallServer()
-						end
+					if shared.vapeteammembers and bedwars["ClientStore"]:getState().Party then
+						repeat wait() until #bedwars["ClientStore"]:getState().Party.members >= shared.vapeteammembers or JoinQueue["Enabled"] == false
 					end
-					wait(30)
-					bedwars["Client"]:Get("LeaveQueue"):CallServer()
+					if JoinQueue["Enabled"] then
+						if bedwars["ClientStore"]:getState().Party.leader.userId == lplr.UserId and bedwars["Client"]:Get("JoinQueue"):CallServer({
+							queueType = JoinQueueTypes["Value"]
+						}) then
+							if JoinQueue["Enabled"] == false then
+								bedwars["Client"]:Get("LeaveQueue"):CallServer()
+							end
+						end
+						wait(30)
+						bedwars["Client"]:Get("LeaveQueue"):CallServer()
+					end
+					
 				until JoinQueue["Enabled"] == false
 			end)
 		else
+			shared.vapeteammembers = nil
 			bedwars["Client"]:Get("LeaveQueue"):CallServer()
 		end
 	end
@@ -317,6 +357,7 @@ local fly = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOp
 					flydown = false
 				end
 			end)
+			
 			BindToRenderStep("Fly", 1, function(delta) 
 				if isAlive() then
 						if (bodyvelofly ~= nil) then
